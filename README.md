@@ -7,15 +7,6 @@
 
 http://stefan.blinkenarea.org/Blimp/Blimp.html
 
-## Installation
-
-Include in your project.clj:
-
-    [blimp "0.4.0-SNAPSHOT"]
-
-Run:
-
-    lein deps
 
 ## License
 
