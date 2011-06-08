@@ -1,10 +1,12 @@
 /* BlinkenLightsInteractiveMovieProgram
  * Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>
+ * Copyright (C) 2011     : Alexander Wunschik <alex@wunschik.net>
  * Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html
  * a blinkenarea.org project
  * 
- * version 1.3.8 date 2009-11-21
- * version 1.3.9 date 2011-06-08 added LettemBlink support
+ * version 1.3.8  date 2009-11-21
+ * version 1.3.9  date 2011-06-08 added LettemBlink support
+ * version 1.3.10 date 2011-06-08 added Undo/Redo shortcuts
  */
 
 package org.blinkenarea.Blimp;
@@ -51,7 +53,7 @@ public class Blimp extends JApplet
     "TROIA ceiling (104x80-1/128) [a=1.0]",
     "TROIA small walls (80x32-1/128) [a=1.0]",
     "TroiCade (32x24-1/128) [a=1.0]",
-    "LettemBlink (8x16-1/256) [a=1.0]"
+    "LettemBlink (8x16-3/255) [a=1.0]"
   };
 
   //known sizes
@@ -86,7 +88,7 @@ public class Blimp extends JApplet
   JMenu menuEditResize, menuEditScale;
   JMenuItem menuEditResizeUser, menuEditScaleUser;
   JMenuItem menuEditResizeKnown[], menuEditScaleKnown[];
-  JMenuItem menuEditInsertFrame, menuEditDuplicateFrame, menuEditDeleteFrame;
+  JMenuItem menuEditUndo,menuEditRedo, menuEditInsertFrame, menuEditDuplicateFrame, menuEditDeleteFrame;
   JMenuItem menuFrameSelNone, menuFrameSelSingle, menuFrameSelStart, menuFrameSelEnd;
   JMenuItem menuFrameSelCopy, menuFrameSelMove, menuFrameSelReverse, menuFrameSelDelete;
   JMenuItem menuEditImportImages, menuEditImportMovie;
@@ -1828,6 +1830,10 @@ public class Blimp extends JApplet
       actionEditResizeUser( );
     else if( e.getSource( ) == menuEditScaleUser )
       actionEditScaleUser( );
+    else if( e.getSource( ) == menuEditUndo )
+      frameEditor.actionUndo( );
+    else if( e.getSource( ) == menuEditRedo )
+      frameEditor.actionRedo( );
     else if( e.getSource( ) == menuEditInsertFrame )
       actionEditInsertFrame( );
     else if( e.getSource( ) == menuEditDuplicateFrame )
@@ -2123,8 +2129,8 @@ public class Blimp extends JApplet
     }
 
     //create menus
-    //file menu
     menuFile = new JMenu( "File" );
+    //file menu
     menuFile.setMnemonic( KeyEvent.VK_F );
     menubar.add( menuFile );
     menuFileNew = new JMenuItem( "New" );
@@ -2203,6 +2209,15 @@ public class Blimp extends JApplet
       menuEditScaleKnown[i].addActionListener( this );
       menuEditScale.add( menuEditScaleKnown[i] );
     }
+    menuEdit.addSeparator( );
+    menuEditUndo = new JMenuItem( "Undo" );
+    menuEditUndo.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_Z, KeyEvent.CTRL_MASK ) );
+    menuEditUndo.addActionListener( this );
+    menuEdit.add( menuEditUndo );
+    menuEditRedo = new JMenuItem( "Redo" );
+    menuEditRedo.setAccelerator( KeyStroke.getKeyStroke( KeyEvent.VK_Y, KeyEvent.CTRL_MASK ) );
+    menuEditRedo.addActionListener( this );
+    menuEdit.add( menuEditRedo );
     menuEdit.addSeparator( );
     menuEditInsertFrame = new JMenuItem( "Insert Frame" );
     menuEditInsertFrame.setMnemonic( KeyEvent.VK_I );
@@ -2561,10 +2576,10 @@ public class Blimp extends JApplet
     buttonActionsUndo.setMargin( smallMargin );
     buttonActionsUndo.setToolTipText( "Undo" );
     buttonActionsUndo.setEnabled( false );
-    buttonActionsUndo.addActionListener( this );
+    buttonActionsUndo.addActionListener( this );  
     panelActions.add( buttonActionsUndo );
     buttonActionsRedo = new JButton( loadImageIcon( "Redo.png" ) );
-    buttonActionsRedo.setMargin( smallMargin );
+    buttonActionsRedo.setMargin( smallMargin );;
     buttonActionsRedo.setToolTipText( "Redo" );
     buttonActionsRedo.setEnabled( false );
     buttonActionsRedo.addActionListener( this );
