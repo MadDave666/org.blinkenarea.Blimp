@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <title>Blimp - BlinkenLightsInteractiveMovieProgram</title>
+  </head>
+  <script language="JavaScript">
+    function Resize( )
+    {
+      var applet, height, width;
+      height = document.body.clientHeight - 20;
+      width = document.body.clientWidth - 20
+      applet = document.Blimp;
+      applet.width = width;
+      applet.height = height;
+      applet.setSize( width, height );
+    }
+  </script>
+  <body onLoad="Resize( );" onResize="Resize( );">
+    <applet archive="Blimp.jar" code="org.blinkenarea.Blimp.Blimp" height="420" name="Blimp" width="560">
+    </applet>
+  </body>
+</html>
