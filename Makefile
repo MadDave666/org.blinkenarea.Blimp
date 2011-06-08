@@ -1,9 +1,8 @@
 # BlinkenLightsInteractiveMovieProgram
-# version 1.3 date 2006-10-10
-# Copyright (C) 2004-2006: Stefan Schuermans <1stein@schuermans.info>
+# version 1.3.8 date 2009-11-21
+# Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>
 # Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html
 # a blinkenarea.org project
-# powered by eventphone.de
 
 BLINKEN_LIB=../BlinkenLibJava/BlinkenLib.jar
 

@@ -1,9 +1,8 @@
 /* BlinkenLightsInteractiveMovieProgram
- * version 1.3 date 2006-10-10
- * Copyright (C) 2004-2006: Stefan Schuermans <1stein@schuermans.info>
+ * version 1.3.8 date 2009-11-21
+ * Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>
  * Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html
  * a blinkenarea.org project
- * powered by eventphone.de
  */
 
 package org.blinkenarea.Blimp;
@@ -29,8 +28,45 @@ public class Blimp extends JApplet
   //configuration constants
   static final int constColorCntX = 2, constColorCntY = 4;
   static final int constColorCnt = constColorCntX * constColorCntY;
-  static final int defHeight = 8, defWidth = 8, defChannels = 1, defMaxval = 127, defDuration = 100;
+  static final int defHeight = 24, defWidth = 32, defChannels = 1, defMaxval = 127, defDuration = 100;
+  static final double defAspect = 1.0;
   static final int ZoomAspectResolution = 30;
+
+  //known formats
+  static final String[] knownFormats =
+  {
+    "Blinkenlights (18x8-1/2) [a=0.55]",
+    "Blinkenlights Arcade (26x20-1/16) [a=0.5]",
+    "Blinkenlights reloaded (18x8-1/16) [a=0.55]",
+    "Blinkenlights Stereoscope total (96x32-1/256) [a=0.65]",
+    "Blinkenlights Stereoscope West upper (22x8-1/16) [a=0.65]",
+    "Blinkenlights Stereoscope West lower (22x7-1/16) [a=0.65]",
+    "Blinkenlights Stereoscope East upper (30x12-1/16) [a=0.65]",
+    "Blinkenlights Stereoscope East lower (30x9-1/16) [a=0.65]",
+    "bluebox (98x7-1/128) [a=0.32]",
+    "ColorCurtain (18x8-3/256) [a=1.0]",
+    "TROIA big walls (104x32-1/128) [a=1.0]",
+    "TROIA ceiling (104x80-1/128) [a=1.0]",
+    "TROIA small walls (80x32-1/128) [a=1.0]",
+    "TroiCade (32x24-1/128) [a=1.0]",
+  };
+
+  //known sizes
+  static final String[] knownSizes =
+  {
+    "Blinkenlights (18x8)",
+    "Blinkenlights Arcade (26x20)",
+    "Blinkenlights Stereoscope total (96x32)",
+    "Blinkenlights Stereoscope West upper (22x8)",
+    "Blinkenlights Stereoscope West lower (22x7)",
+    "Blinkenlights Stereoscope East upper (30x12)",
+    "Blinkenlights Stereoscope East lower (30x9)",
+    "bluebox (98x7)",
+    "TROIA big walls (104x32)",
+    "TROIA ceiling (104x80)",
+    "TROIA small walls (80x32)",
+    "TroiCade (32x24)",
+  };
 
   //configuration variables
   boolean isFullApp = false; //if running as full application
@@ -43,7 +79,9 @@ public class Blimp extends JApplet
   JMenu menuFile, menuInfo, menuEdit, menuFrameSel, menuPlay, menuHelp; //menus
   JMenuItem menuFileNew, menuFileLoad, menuFileSave, menuFileSaveAs, menuFileQuit;
   JMenuItem menuInfoShow, menuInfoAdd, menuInfoDelete;
-  JMenuItem menuEditResize, menuEditScale;
+  JMenu menuEditResize, menuEditScale;
+  JMenuItem menuEditResizeUser, menuEditScaleUser;
+  JMenuItem menuEditResizeKnown[], menuEditScaleKnown[];
   JMenuItem menuEditInsertFrame, menuEditDuplicateFrame, menuEditDeleteFrame;
   JMenuItem menuFrameSelNone, menuFrameSelSingle, menuFrameSelStart, menuFrameSelEnd;
   JMenuItem menuFrameSelCopy, menuFrameSelMove, menuFrameSelReverse, menuFrameSelDelete;
@@ -73,7 +111,8 @@ public class Blimp extends JApplet
   JButton buttonActionsRollLeft, buttonActionsRollRight, buttonActionsRollUp, buttonActionsRollDown;
   JButton buttonActionsUndo, buttonActionsRedo;
   JButton buttonEditInsertFrame, buttonEditDuplicateFrame, buttonEditDeleteFrame;
-  JPanel panelColorsChoose, panelColorsSettings, panelColorsColor, panelColorsAlpha;
+  JButton buttonColorsPredefGray, buttonColorsPredefColor;
+  JPanel panelColorsChoose, panelColorsSettings, panelColorsPredef, panelColorsColor, panelColorsAlpha;
   JToggleButton buttonsColor[];
   ButtonGroup groupColor;
   JLabel labelColorsColor, labelColorsAlpha;
@@ -147,6 +186,21 @@ public class Blimp extends JApplet
     return false;
   }
 
+  //set file filters for file chooser
+  private void setFileFilters( JFileChooser fileChooser )
+  {
+    javax.swing.filechooser.FileFilter fileFilters[ ] = fileChooser.getChoosableFileFilters( );
+    for( int i = 0; i < fileFilters.length; i++ )
+      fileChooser.removeChoosableFileFilter( fileFilters[i] );
+    javax.swing.filechooser.FileFilter blinkenFileFilter = new BlinkenFileFilter( );
+    fileChooser.addChoosableFileFilter( blinkenFileFilter );
+    fileChooser.addChoosableFileFilter( new BlinkenFileFilter( "blm" ) );
+    fileChooser.addChoosableFileFilter( new BlinkenFileFilter( "bmm" ) );
+    fileChooser.addChoosableFileFilter( new BlinkenFileFilter( "bml" ) );
+    fileChooser.addChoosableFileFilter( new BlinkenFileFilter( "bbm" ) );
+    fileChooser.setFileFilter( blinkenFileFilter );
+  }
+
   //"File New" was chosen from menu
   private void actionFileNew( )
   {
@@ -160,7 +214,7 @@ public class Blimp extends JApplet
     labelStatus.setText( "new movie..." );
     curFile = null;
     curMovie = new BlinkenMovie( defHeight, defWidth, defChannels, defMaxval );
-    curMovie.insertInfo( 0, "creator", "Blimp (version 1.3 date 2006-10-10)" );
+    curMovie.insertInfo( 0, "creator", "Blimp (version 1.3.8 date 2009-11-21)" );
     curMovie.insertFrame( 0, new BlinkenFrame( defHeight, defWidth, defChannels, defMaxval, defDuration ) );
     curMovieChanged = false;
 
@@ -205,7 +259,7 @@ public class Blimp extends JApplet
     //show file select dialog
     fileChooser = new JFileChooser( );
     fileChooser.setDialogTitle( "Blimp - Load..." );
-    fileChooser.setFileFilter( new BlinkenFileFilter( ) );
+    setFileFilters( fileChooser );
     if( curDir != null )
       fileChooser.setCurrentDirectory( curDir );
     if( fileChooser.showOpenDialog( dialogParent ) == JFileChooser.APPROVE_OPTION )
@@ -226,6 +280,21 @@ public class Blimp extends JApplet
     {
       actionFileSaveAs( );
       return;
+    }
+    //warn if selected format does not fully support current format
+    if( curFile.getPath( ).endsWith( ".blm" ) && (curMovie.getChannels( ) > 1 || curMovie.getMaxval( ) > 1) )
+    {
+      JOptionPane.showMessageDialog( dialogParent,
+                                     "The selected format \"BlinkenLights Movie (*.blm)\"\nonly supports one channel with two colors.\nFor not losing any information, please save\nyour movie as \"Blinkenlights Markup Language movie (*.bml)\"",
+                                     "Blimp - Save - Warning",
+                                     JOptionPane.WARNING_MESSAGE );
+    }
+    if( curFile.getPath( ).endsWith( ".bmm" ) && curMovie.getChannels( ) > 1 )
+    {
+      JOptionPane.showMessageDialog( dialogParent,
+                                     "The selected format \"BlinkenMini Movie (*.blm)\"\nonly supports one channel.\nFor not losing any information, please save\nyour movie as \"Blinkenlights Markup Language movie (*.bml)\"",
+                                     "Blimp - Save - Warning",
+                                     JOptionPane.WARNING_MESSAGE );
     }
     //save file
     if( curMovie.save( curFile.getPath( ) ) )
@@ -249,7 +318,7 @@ public class Blimp extends JApplet
     //show file select dialog
     fileChooser = new JFileChooser( );
     fileChooser.setDialogTitle( "Blimp - Save as..." );
-    fileChooser.setFileFilter( new BlinkenFileFilter( ) );
+    setFileFilters( fileChooser );
     if( curDir != null )
       fileChooser.setCurrentDirectory( curDir );
     if( curFile != null )
@@ -368,22 +437,158 @@ public class Blimp extends JApplet
     }
   }
 
-  //"Edit Resize Movie..." was chosen from menu
-  private void actionEditResize( )
+  //get format or size from bracket in string
+  private String getFormatOrSize( String str )
+  {
+    Pattern pattern;
+    Matcher matcher;
+
+    pattern = Pattern.compile( "^.*\\(([^()]*)\\)( \\[[^\\[\\]]*\\])?$" );
+    if( (matcher = pattern.matcher( str )).find( ) )
+      return matcher.group( 1 );
+    else
+      return "";
+  }
+
+  //get aspect from square bracket in string
+  private String getAspect( String str )
+  {
+    Pattern pattern;
+    Matcher matcher;
+
+    pattern = Pattern.compile( "^.*\\[([^\\[\\]]*)\\]$" );
+    if( (matcher = pattern.matcher( str )).find( ) )
+      return matcher.group( 1 );
+    else
+      return "";
+  }
+
+  //resize to format
+  private boolean actionEditResizeToFormat( String format )
+  {
+    Pattern formatPattern;
+    Matcher formatMatcher;
+
+    //initialize format pattern
+    formatPattern = Pattern.compile( "^([0-9]+)x([0-9]+)-([0-9]+)/([0-9]+)$" );
+
+    //check format
+    if( ! (formatMatcher = formatPattern.matcher( format )).find( ) ) //abort and return error if format not valid
+      return false;
+
+    //resize movie
+    curMovie.resize( Integer.parseInt( formatMatcher.group( 2 ) ),
+                     Integer.parseInt( formatMatcher.group( 1 ) ),
+                     Integer.parseInt( formatMatcher.group( 3 ) ),
+                     Integer.parseInt( formatMatcher.group( 4 ) ) - 1 );
+    curMovieChanged = true;
+
+    //update controls
+    updateFrames( scrollFrames.getValue( ) );
+
+    //update status
+    labelStatus.setText( "movie resized successfully to " + format + "..." );
+
+    return true;
+  }
+
+  //set aspect (in context of resizing movie)
+  private boolean actionEditResizeSetAspect( String aspect )
+  {
+    Pattern aspectPattern;
+    Matcher aspectMatcher;
+    double aspectValue;
+
+    //initialize aspect pattern
+    aspectPattern = Pattern.compile( "^a=([0-9.]+)$" );
+
+    //check aspect
+    if( ! (aspectMatcher = aspectPattern.matcher( aspect )).find( ) ) //abort and return error if aspect not valid
+      return false;
+
+    //parse aspect if specified
+    try
+    {
+      aspectValue = Double.parseDouble( aspectMatcher.group( 1 ) );
+    }
+    catch( NumberFormatException e )
+    {
+      return false;
+    }
+
+    //set new aspect
+    sliderAspect.setValue( aspectZoomToSliderValue( aspectValue ) );
+
+    return true;
+  }
+
+  //"Edit Resize Movie user defined format..." was chosen from menu
+  private void actionEditResizeUser( )
+  {
+    String curFormat;
+    Object format;
+
+    //get string with current movie format
+    curFormat = curMovie.getWidth( ) + "x" +
+                curMovie.getHeight( ) + "-" + 
+                curMovie.getChannels( ) + "/" + 
+                (curMovie.getMaxval( ) + 1);
+
+    //ask until cancel or answer is valid
+    format = curFormat;
+    do
+    {
+      //ask for new format
+      format = JOptionPane.showInputDialog( dialogParent,
+                                            "Current movie format is:   " + curFormat + "\n\n" +
+                                            "The format is:   <width>x<height>-<channels>/<colors>\n\n" +
+                                            "Please enter the new movie format:",
+                                            "Blimp - Resize Movie...",
+                                            JOptionPane.QUESTION_MESSAGE,
+                                            null, null, format );
+      //dialog was cancelled
+      if( format == null )
+        return;
+    }
+    while( ! actionEditResizeToFormat( format.toString( ) ) ); //repeat question if answer not valid
+  }
+
+  // scale to size
+  private boolean actionEditScaleToSize( String size )
   {
     Pattern sizePattern;
-    String curSize;
-    Object size;
     Matcher sizeMatcher;
 
     //initialize size pattern
-    sizePattern = Pattern.compile( "^([0-9]+)x([0-9]+)-([0-9]+)/([0-9]+)$" );
+    sizePattern = Pattern.compile( "^([0-9]+)x([0-9]+)$" );
+
+    //ask until cancel or answer is valid
+    if( ! (sizeMatcher = sizePattern.matcher( size.toString( ) )).find( ) ) //abort and return error if size not valid
+      return false;
+
+    //scale movie
+    curMovie.scale( Integer.parseInt( sizeMatcher.group( 2 ) ),
+                    Integer.parseInt( sizeMatcher.group( 1 ) ) );
+    curMovieChanged = true;
+
+    //update controls
+    updateFrames( scrollFrames.getValue( ) );
+
+    //update status
+    labelStatus.setText( "movie scaled successfully to " + size + "..." );
+
+    return true;
+  }
+
+  //"Edit Scale Movie user defined size..." was chosen from menu
+  private void actionEditScaleUser( )
+  {
+    String curSize;
+    Object size;
 
     //get string with current movie size
     curSize = curMovie.getWidth( ) + "x" +
-              curMovie.getHeight( ) + "-" + 
-              curMovie.getChannels( ) + "/" + 
-              (curMovie.getMaxval( ) + 1);
+              curMovie.getHeight( );
 
     //ask until cancel or answer is valid
     size = curSize;
@@ -391,92 +596,17 @@ public class Blimp extends JApplet
     {
       //ask for new size
       size = JOptionPane.showInputDialog( dialogParent,
-                                          "Current movie size is:   " + curSize + "\n\n" +
-                                          "The format is:   <width>x<height>-<channels>/<colors>\n" + 
-                                          "     18x8-1/2     (Blinkenlights)\n" + 
-                                          "     18x8-1/16     (Blinkenlights Reloaded)\n" + 
-                                          "     26x20-1/16     (Blinkenlights Arcade)\n" + 
-                                          "     104x32-1/128     (TROIA big walls)\n" + 
-                                          "     80x32-1/128     (TROIA small walls)\n" + 
-                                          "     104x80-1/128     (TROIA floor + ceiling)\n" +
-                                          "     98x7-1/128     (bluebox)\n\n" +
-                                          "Please enter the new movie size:",
-                                          "Blimp - Resize Movie...",
+                                          "Current movie dimension is:   " + curSize + "\n\n" +
+                                          "The format is:   <width>x<height>\n\n" + 
+                                          "Please enter the new movie dimension:",
+                                          "Blimp - Scale Movie...",
                                           JOptionPane.QUESTION_MESSAGE,
                                           null, null, size );
       //dialog was cancelled
       if( size == null )
         return;
     }
-    while( ! (sizeMatcher = sizePattern.matcher( size.toString( ) )).find( ) ); //repeat question if answer not valid
-
-    //resize movie
-    curMovie.resize( Integer.parseInt( sizeMatcher.group( 2 ) ),
-                     Integer.parseInt( sizeMatcher.group( 1 ) ),
-                     Integer.parseInt( sizeMatcher.group( 3 ) ),
-                     Integer.parseInt( sizeMatcher.group( 4 ) ) - 1 );
-    curMovieChanged = true;
-
-    //update controls
-    updateFrames( scrollFrames.getValue( ) );
-
-    //update status
-    labelStatus.setText( "movie resized successfully to " + size.toString( ) + "..." );
-  }
-
-  //"Edit Scale Movie..." was chosen from menu
-  private void actionEditScale( )
-  {
-    Pattern dimPattern;
-    String curDim, curSize;
-    Object dim;
-    Matcher dimMatcher;
-
-    //initialize dimension pattern
-    dimPattern = Pattern.compile( "^([0-9]+)x([0-9]+)$" );
-
-    //get string with current movie size
-    curDim = curMovie.getWidth( ) + "x" +
-             curMovie.getHeight( );
-    curSize = curMovie.getWidth( ) + "x" +
-              curMovie.getHeight( ) + "-" + 
-              curMovie.getChannels( ) + "/" + 
-              (curMovie.getMaxval( ) + 1);
-
-    //ask until cancel or answer is valid
-    dim = curDim;
-    do
-    {
-      //ask for new size
-      dim = JOptionPane.showInputDialog( dialogParent,
-                                         "Current movie dimension is:   " + curDim + " (" + curSize + ")\n\n" +
-                                         "The format is:   <width>x<height>\n" + 
-                                         "     18x8     (Blinkenlights, Blinkenlights Reloaded)\n" + 
-                                         "     26x20     (Blinkenlights Arcade)\n" + 
-                                         "     104x32     (TROIA big walls)\n" + 
-                                         "     80x32     (TROIA small walls)\n" + 
-                                         "     104x80     (TROIA floor + ceiling)\n" +
-                                         "     98x7     (bluebox)\n\n" +
-                                         "Please enter the new movie dimension:",
-                                         "Blimp - Scale Movie...",
-                                         JOptionPane.QUESTION_MESSAGE,
-                                         null, null, dim );
-      //dialog was cancelled
-      if( dim == null )
-        return;
-    }
-    while( ! (dimMatcher = dimPattern.matcher( dim.toString( ) )).find( ) ); //repeat question if answer not valid
-
-    //scale movie
-    curMovie.scale( Integer.parseInt( dimMatcher.group( 2 ) ),
-                    Integer.parseInt( dimMatcher.group( 1 ) ) );
-    curMovieChanged = true;
-
-    //update controls
-    updateFrames( scrollFrames.getValue( ) );
-
-    //update status
-    labelStatus.setText( "movie scaled successfully to " + dim.toString( ) + "..." );
+    while( ! actionEditScaleToSize( size.toString( ) ) ); //repeat question if answer not valid
   }
 
   //"Edit Insert Frame" was chosen from menu / Insert Frame button was pressed
@@ -638,12 +768,12 @@ public class Blimp extends JApplet
     JFileChooser fileChooser;
     BlinkenMovie movie;
     BlinkenFrame newFrame;
-    int frameCnt, frameNo, cnt, i;
+    int frameCnt, frameNo, cnt;
 
     //show file select dialog
     fileChooser = new JFileChooser( );
     fileChooser.setDialogTitle( "Blimp - Import Movie..." );
-    fileChooser.setFileFilter( new BlinkenFileFilter( ) );
+    setFileFilters( fileChooser );
     if( curDir != null )
       fileChooser.setCurrentDirectory( curDir );
     if( fileChooser.showOpenDialog( dialogParent ) != JFileChooser.APPROVE_OPTION ) //not successful
@@ -667,7 +797,7 @@ public class Blimp extends JApplet
     if( frameNo > frameCnt )
       frameNo = frameCnt;
     cnt = movie.getFrameCnt( );
-    for( i = 0; i < cnt; i++ )
+    for( int i = 0; i < cnt; i++ )
     {
       newFrame = new BlinkenFrame( movie.getFrame( i ) );
       curMovie.insertFrame( frameNo + i, newFrame ); //this resizes the frame to fit the movie dimensions
@@ -956,11 +1086,10 @@ public class Blimp extends JApplet
   {
     JOptionPane.showMessageDialog( dialogParent,
                                    "BlinkenLightsInteractiveMovieProgram\n" +
-                                   "version 1.3 date 2006-10-10\n" +
-                                   "Copyright (C) 2004-2006: Stefan Schuermans <1stein@schuermans.info>\n" +
+                                   "version 1.3.8 date 2009-11-21\n" +
+                                   "Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>\n" +
                                    "Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html\n" +
-                                   "a blinkenarea.org project\n" +
-                                   "powered by eventphone.de",
+                                   "a blinkenarea.org project",
                                    "Blimp - About...",
                                    JOptionPane.INFORMATION_MESSAGE );
   }
@@ -1071,6 +1200,18 @@ public class Blimp extends JApplet
     menuFrameSelDelete.setEnabled( valid );
   }
 
+  //convert aspect or zoom to aspect or zoom slider value
+  private int aspectZoomToSliderValue( double aspectZoom )
+  {
+    double value = Math.log( aspectZoom ) / Math.log( 2.0 );
+    value *= (double)ZoomAspectResolution;
+    if( value >= 0.0 )
+      value += 0.5;
+    else
+      value -= 0.5;
+    return (int)value;
+  }
+
   //set zoom and aspect value of frame
   private void setZoomAspect( )
   {
@@ -1129,7 +1270,7 @@ public class Blimp extends JApplet
 
       //set new zoom value without triggering events
       noRecurseZoomAspect = true;
-      sliderZoom.setValue( (int)((Math.log( zoom ) / Math.log( 2.0 )) * (double)ZoomAspectResolution + 0.5) );
+      sliderZoom.setValue( aspectZoomToSliderValue( zoom ) );
       noRecurseZoomAspect = false;
 
       //set zoom and aspect value of frame
@@ -1197,7 +1338,7 @@ public class Blimp extends JApplet
 
       //set new aspect value without triggering events
       noRecurseZoomAspect = true;
-      sliderAspect.setValue( (int)((Math.log( aspect ) / Math.log( 2.0 )) * (double)ZoomAspectResolution + 0.5) );
+      sliderAspect.setValue( aspectZoomToSliderValue( aspect ) );
       noRecurseZoomAspect = false;
 
       //set zoom and aspect value of frame
@@ -1277,6 +1418,57 @@ public class Blimp extends JApplet
     showDuration( );
   }
 
+  //generate a gray gradient icon
+  private void iconGradientGray( ImageIcon icon )
+  {
+    int height, width, val, x;
+    Graphics graphics;
+
+    //get size
+    height = icon.getIconHeight( );
+    width = icon.getIconWidth( );
+
+    //get graphics context of icon's image
+    graphics = icon.getImage( ).getGraphics( );
+
+    //draw gradient to icon
+    for( x = 0; x < width; x++ ) {
+      val = x * 255 / (width - 1);
+      graphics.setColor( new Color( val, val, val ) );
+      graphics.drawLine( x, 0, x, height );
+    }
+  }
+
+  //generate a color gradient icon
+  private void iconGradientColor( ImageIcon icon )
+  {
+    int height, width, val, step, x;
+    Graphics graphics;
+
+    //get size
+    height = icon.getIconHeight( );
+    width = icon.getIconWidth( );
+
+    //get graphics context of icon's image
+    graphics = icon.getImage( ).getGraphics( );
+
+    //draw gradient to icon
+    for( x = 0; x < width; x++ ) {
+      val = x * 6 * 255 / (width - 1);
+      step = val / 255;
+      val %= 255;
+      switch( step ) {
+        case 0: graphics.setColor( new Color( 255, val, 0 ) ); break;
+        case 1: graphics.setColor( new Color( 255 - val, 255, 0 ) ); break;
+        case 2: graphics.setColor( new Color( 0, 255, val ) ); break;
+        case 3: graphics.setColor( new Color( 0, 255 - val, 255 ) ); break;
+        case 4: graphics.setColor( new Color( val, 0, 255 ) ); break;
+        case 5: graphics.setColor( new Color( 255, 0, 255 - val ) ); break;
+      }
+      graphics.drawLine( x, 0, x, height );
+    }
+  }
+
   //generate a color icon from a color
   private void iconFromColor( ImageIcon icon, Color color )
   {
@@ -1291,22 +1483,7 @@ public class Blimp extends JApplet
     //get graphics context of icon's image
     graphics = icon.getImage( ).getGraphics( );
 
-    //draw background
-    graphics.setColor( new Color( color.getRed( ), color.getGreen( ), color.getBlue( ) ) );
-    graphics.fillRect( 0, 0, width / 2, height );
-    for( y = 0, yy = false; y < height; y += height / 4, yy = ! yy )
-    {
-      for( x = width / 2, xx = yy; x < width; x += width / 6, xx = ! xx )
-      {
-        if( xx )
-          graphics.setColor( Color.white );
-        else
-          graphics.setColor( Color.black );
-        graphics.fillRect( x, y, width / 6, height / 4 );
-      }
-    }
-
-    //draw foreground in specified color
+    //fill icon in specified color
     graphics.setColor( color );
     graphics.fillRect( 0, 0, width, height );
   }
@@ -1362,6 +1539,60 @@ public class Blimp extends JApplet
     else
       hex += Integer.toHexString( blue );
     textColorsColor.setText( hex.toUpperCase( ) );
+  }
+
+  //gray predefined colors have been chosen
+  private void actionColorsPredefGray( )
+  {
+    int i, val;
+
+    //update color buttons
+    for( i = 0; i < constColorCnt; i++ )
+    {
+      val = (constColorCnt - 1 - i) * 255 / (constColorCnt - 1);
+      colors[i] = new Color( val, val, val );
+      iconFromColor( iconsColor[i], colors[i] );
+      buttonsColor[i].repaint( );
+    }
+
+    //update current color
+    showColorsColor( );
+    frameEditor.setColor( colors[colorIdx] );
+  }
+
+  //colorful predefined colors have been chosen
+  private void actionColorsPredefColor( )
+  {
+    int i, val, step;
+
+    //update color buttons
+    for( i = 0; i < constColorCnt; i++ )
+    {
+      if( i == 0 )
+        colors[i] = new Color( 255, 255, 255 );
+      else if( i == 1 )
+        colors[i] = new Color( 0, 0, 0 );
+      else
+      {
+        val = (i - 2) * 6 * 255 / (constColorCnt - 2);
+        step = val / 255;
+        val %= 255;
+        switch( step ) {
+          case 0: colors[i] = new Color( 255, val, 0 ); break;
+          case 1: colors[i] = new Color( 255 - val, 255, 0 ); break;
+          case 2: colors[i] = new Color( 0, 255, val ); break;
+          case 3: colors[i] = new Color( 0, 255 - val, 255 ); break;
+          case 4: colors[i] = new Color( val, 0, 255 ); break;
+          case 5: colors[i] = new Color( 255, 0, 255 - val ); break;
+        }
+      }
+      iconFromColor( iconsColor[i], colors[i] );
+      buttonsColor[i].repaint( );
+    }
+
+    //update current color
+    showColorsColor( );
+    frameEditor.setColor( colors[colorIdx] );
   }
 
   //color select button was pressed
@@ -1589,10 +1820,10 @@ public class Blimp extends JApplet
       actionInfoAdd( );
     else if( e.getSource( ) == menuInfoDelete )
       actionInfoDelete( );
-    else if( e.getSource( ) == menuEditResize )
-      actionEditResize( );
-    else if( e.getSource( ) == menuEditScale )
-      actionEditScale( );
+    else if( e.getSource( ) == menuEditResizeUser )
+      actionEditResizeUser( );
+    else if( e.getSource( ) == menuEditScaleUser )
+      actionEditScaleUser( );
     else if( e.getSource( ) == menuEditInsertFrame )
       actionEditInsertFrame( );
     else if( e.getSource( ) == menuEditDuplicateFrame )
@@ -1687,6 +1918,10 @@ public class Blimp extends JApplet
       actionEditDuplicateFrame( );
     else if( e.getSource( ) == buttonEditDeleteFrame )
       actionEditDeleteFrame( );
+    else if( e.getSource( ) == buttonColorsPredefGray )
+      actionColorsPredefGray( );
+    else if( e.getSource( ) == buttonColorsPredefColor )
+      actionColorsPredefColor( );
     else if( e.getSource( ) == buttonColorsColor )
       actionColorsColor( );
     else if( e.getSource( ) == textColorsColor )
@@ -1695,11 +1930,36 @@ public class Blimp extends JApplet
       validateColorsAlpha( );
     else
     {
-      for( i = 0; i < constColorCnt; i++ )
-        if( e.getSource( ) == buttonsColor[i] )
+      do //abuse of break
+      {
+        for( i = 0; i < menuEditResizeKnown.length; i++ )
+          if( e.getSource( ) == menuEditResizeKnown[i] )
+            break;
+        if( i < menuEditResizeKnown.length )
+        {
+          actionEditResizeToFormat( getFormatOrSize( knownFormats[i] ) );
+          actionEditResizeSetAspect( getAspect( knownFormats[i] ) );
           break;
-      if( i < constColorCnt )
-        actionColorIdx( i );
+        }
+
+        for( i = 0; i < menuEditScaleKnown.length; i++ )
+          if( e.getSource( ) == menuEditScaleKnown[i] )
+            break;
+        if( i < menuEditScaleKnown.length )
+        {
+          actionEditScaleToSize( getFormatOrSize( knownSizes[i] ) );
+          break;
+        }
+
+        for( i = 0; i < constColorCnt; i++ )
+          if( e.getSource( ) == buttonsColor[i] )
+            break;
+        if( i < constColorCnt )
+        {
+          actionColorIdx( i );
+          break;
+        }
+      } while( false ); //end abuse of break
     }
   }
 
@@ -1816,12 +2076,13 @@ public class Blimp extends JApplet
   {
     int i, val;
     Dimension size;
+    ImageIcon icon;
     Insets smallMargin;
 
     //initialize current movie, frame
     curDir = new File( "." );
     curMovie = new BlinkenMovie( defHeight, defWidth, defChannels, defMaxval );
-    curMovie.insertInfo( 0, "creator", "Blimp (version 1.3 date 2006-10-10)" );
+    curMovie.insertInfo( 0, "creator", "Blimp (version 1.3.8 date 2009-11-21)" );
     curMovie.insertFrame( 0, new BlinkenFrame( defHeight, defWidth, defChannels, defMaxval, defDuration ) );
     curFrame = null;
 
@@ -1910,14 +2171,34 @@ public class Blimp extends JApplet
     menuEdit = new JMenu( "Edit" );
     menuEdit.setMnemonic( KeyEvent.VK_E );
     menubar.add( menuEdit );
-    menuEditResize = new JMenuItem( "Resize Movie..." );
-    menuEditResize.setMnemonic( KeyEvent.VK_R );
-    menuEditResize.addActionListener( this );
+    menuEditResize = new JMenu("Resize Movie");
     menuEdit.add( menuEditResize );
-    menuEditScale = new JMenuItem( "Scale Movie..." );
-    menuEditScale.setMnemonic( KeyEvent.VK_S );
-    menuEditScale.addActionListener( this );
+    menuEditResize.setMnemonic( KeyEvent.VK_R );
+    menuEditResizeUser = new JMenuItem( "user defined format..." );
+    menuEditResizeUser.addActionListener( this );
+    menuEditResize.add( menuEditResizeUser );
+    menuEditResize.addSeparator( );
+    menuEditResizeKnown = new JMenuItem[knownFormats.length];
+    for( i = 0; i < knownFormats.length; i++ )
+    {
+      menuEditResizeKnown[i] = new JMenuItem( knownFormats[i] );
+      menuEditResizeKnown[i].addActionListener( this );
+      menuEditResize.add( menuEditResizeKnown[i] );
+    }
+    menuEditScale = new JMenu ( "Scale Movie" );
     menuEdit.add( menuEditScale );
+    menuEditScale.setMnemonic( KeyEvent.VK_S );
+    menuEditScaleUser = new JMenuItem( "user defined size..." );
+    menuEditScaleUser.addActionListener( this );
+    menuEditScale.add( menuEditScaleUser );
+    menuEditScale.addSeparator( );
+    menuEditScaleKnown = new JMenuItem[knownSizes.length];
+    for( i = 0; i < knownSizes.length; i++ )
+    {
+      menuEditScaleKnown[i] = new JMenuItem( knownSizes[i] );
+      menuEditScaleKnown[i].addActionListener( this );
+      menuEditScale.add( menuEditScaleKnown[i] );
+    }
     menuEdit.addSeparator( );
     menuEditInsertFrame = new JMenuItem( "Insert Frame" );
     menuEditInsertFrame.setMnemonic( KeyEvent.VK_I );
@@ -2096,7 +2377,7 @@ public class Blimp extends JApplet
     panelAspectName.add( labelAspectName );
     labelAspect = new JLabel( "", JLabel.CENTER );
     panelAspectName.add( labelAspect );
-    sliderAspect = new JSlider( JSlider.VERTICAL, -3 * ZoomAspectResolution, 3 * ZoomAspectResolution, 0 );
+    sliderAspect = new JSlider( JSlider.VERTICAL, -3 * ZoomAspectResolution, 3 * ZoomAspectResolution, aspectZoomToSliderValue( defAspect ) );
     sliderAspect.setSnapToTicks( true );
     sliderAspect.addChangeListener( this );
     sliderAspect.setToolTipText( "aspect" );
@@ -2316,8 +2597,18 @@ public class Blimp extends JApplet
       panelColorsChoose.add( buttonsColor[i] );
     }
     //color panel - settings
-    panelColorsSettings = new JPanel( new GridLayout( 4, 1, 5, 0 ) );
+    panelColorsSettings = new JPanel( new GridLayout( 5, 1, 5, 0 ) );
     panelColors.add( panelColorsSettings );
+    panelColorsPredef = new JPanel( new GridLayout( 1, 2, 5, 5 ) );
+    buttonColorsPredefGray = new JButton( );
+    buttonColorsPredefGray.addActionListener( this );
+    buttonColorsPredefGray.setToolTipText( "gray" );
+    panelColorsPredef.add( buttonColorsPredefGray );
+    buttonColorsPredefColor = new JButton( );
+    buttonColorsPredefColor.addActionListener( this );
+    buttonColorsPredefColor.setToolTipText( "color" );
+    panelColorsPredef.add( buttonColorsPredefColor );
+    panelColorsSettings.add( panelColorsPredef );
     labelColorsColor = new JLabel( "color:" );
     labelColorsColor.setVerticalAlignment( JLabel.BOTTOM );
     panelColorsSettings.add( labelColorsColor );
@@ -2351,24 +2642,29 @@ public class Blimp extends JApplet
     textColorsAlpha.addFocusListener( this );
     panelColorsAlpha.add( textColorsAlpha );
     labelColorsAlpha.setLabelFor( panelColorsAlpha );
-    //color panel - color icons
+
+    //initialize colors
     colorIdx = 0;
     colors = new Color[constColorCnt];
-    size = textColorsAlpha.getPreferredSize( );
     iconsColor = new ImageIcon[constColorCnt];
+    size = textColorsAlpha.getPreferredSize( );
     for( i = 0; i < constColorCnt; i++ )
     {
       iconsColor[i] = new ImageIcon( new BufferedImage( size.width, size.height, BufferedImage.TYPE_INT_RGB ) );
-      val = (constColorCnt - 1 - i) * 255 / (constColorCnt - 1);
-      colors[i] = new Color( val, val, val );
-      iconFromColor( iconsColor[i], colors[i] );
+      buttonsColor[i].setIcon( iconsColor[i] );
       buttonsColor[i].setIcon( iconsColor[i] );
     }
+    icon = new ImageIcon( new BufferedImage( size.width, size.height, BufferedImage.TYPE_INT_RGB ) );
+    iconGradientGray( icon );
+    buttonColorsPredefGray.setIcon( icon );
+    icon = new ImageIcon( new BufferedImage( size.width, size.height, BufferedImage.TYPE_INT_RGB ) );
+    iconGradientColor( icon );
+    buttonColorsPredefColor.setIcon( icon );
     iconColorsColor = new ImageIcon( new BufferedImage( size.width, size.height, BufferedImage.TYPE_INT_RGB ) );
-    iconFromColor( iconColorsColor, colors[colorIdx] );
     buttonColorsColor.setIcon( iconColorsColor );
     buttonsColor[colorIdx].setSelected( true );
     frameEditor.setColor( colors[colorIdx] );
+    actionColorsPredefGray( );
 
     //create play timer
     timerPlay = new javax.swing.Timer( 100, this );
@@ -2441,11 +2737,10 @@ public class Blimp extends JApplet
 
     //running as command line tool
     System.out.println( "BlinkenLightsInteractiveMovieProgram\n" +
-                        "version 1.3 date 2006-10-10\n" +
-                        "Copyright (C) 2004-2006: Stefan Schuermans <1stein@schuermans.info>\n" +
+                        "version 1.3.8 date 2009-11-21\n" +
+                        "Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>\n" +
                         "Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html\n" +
-                        "a blinkenarea.org project\n" +
-                        "powered by eventphone.de\n" );
+                        "a blinkenarea.org project\n" );
 
     //initialize patterns
     sizePattern = Pattern.compile( "^([0-9]+)x([0-9]+)-([0-9]+)/([0-9]+)$" );
@@ -2453,7 +2748,7 @@ public class Blimp extends JApplet
 
     //get initial movie
     movie = new BlinkenMovie( defHeight, defWidth, defChannels, defMaxval );
-    movie.insertInfo( 0, "creator", "Blimp (version 1.3 date 2006-10-10)" );
+    movie.insertInfo( 0, "creator", "Blimp (version 1.3.8 date 2009-11-21)" );
     movie.insertFrame( 0, new BlinkenFrame( defHeight, defWidth, defChannels, defMaxval, defDuration ) );
 
     //process parameters
