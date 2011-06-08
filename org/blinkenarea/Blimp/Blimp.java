@@ -49,6 +49,7 @@ public class Blimp extends JApplet
     "TROIA ceiling (104x80-1/128) [a=1.0]",
     "TROIA small walls (80x32-1/128) [a=1.0]",
     "TroiCade (32x24-1/128) [a=1.0]",
+	"LettemBlink (8x16-1/256) [a=1.0]"
   };
 
   //known sizes
