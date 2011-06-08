@@ -1,8 +1,10 @@
 /* BlinkenLightsInteractiveMovieProgram
- * version 1.3.8 date 2009-11-21
  * Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>
  * Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html
  * a blinkenarea.org project
+ * 
+ * version 1.3.8 date 2009-11-21
+ * version 1.3.9 date 2011-06-08 added LettemBlink support
  */
 
 package org.blinkenarea.Blimp;
@@ -49,7 +51,7 @@ public class Blimp extends JApplet
     "TROIA ceiling (104x80-1/128) [a=1.0]",
     "TROIA small walls (80x32-1/128) [a=1.0]",
     "TroiCade (32x24-1/128) [a=1.0]",
-	"LettemBlink (8x16-1/256) [a=1.0]"
+    "LettemBlink (8x16-1/256) [a=1.0]"
   };
 
   //known sizes
@@ -67,6 +69,7 @@ public class Blimp extends JApplet
     "TROIA ceiling (104x80)",
     "TROIA small walls (80x32)",
     "TroiCade (32x24)",
+	"LettemBlink (8x16)",
   };
 
   //configuration variables
