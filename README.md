@@ -5,13 +5,14 @@
 
 ## Demo
 
-http://stefan.blinkenarea.org/Blimp/Blimp.html
+http://blimp.wunschik.net/
 
 ## License
 
 	/* BlinkenLightsInteractiveMovieProgram
-	 * version 1.3 date 2006-10-10
+	 * version 1.3.10 date 2011-08-06
 	 * Copyright (C) 2004-2006: Stefan Schuermans <1stein@schuermans.info>
+	 * Copyright (C) 2011: Alexander Wunschik <alex@wunschik.net>
 	 * Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html
 	 * a blinkenarea.org project
 	 * powered by eventphone.de

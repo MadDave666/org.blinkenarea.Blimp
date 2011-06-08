@@ -36,6 +36,20 @@ public class Blimp extends JApplet
   static final double defAspect = 1.0;
   static final int ZoomAspectResolution = 30;
 
+  //"Help About" was chosen from menu
+  private void actionHelpAbout( )
+  {
+    JOptionPane.showMessageDialog( dialogParent,
+                                   "BlinkenLightsInteractiveMovieProgram\n" +
+                                   "version 1.3.10 date 2011-08-06\n" +
+                                   "Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>\n" +
+                                   "Copyright (C) 2011: Alexander Wunschik <alex@wunschik.net>\n" + 
+                                   "Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html\n" +
+                                   "a blinkenarea.org project",
+                                   "Blimp - About...",
+                                   JOptionPane.INFORMATION_MESSAGE );
+  }
+  
   //known formats
   static final String[] knownFormats =
   {
@@ -1085,19 +1099,6 @@ public class Blimp extends JApplet
       scrollFrames.setValue( frameNoNew ); //play timer will be started again when frame is being shown by scrollbar callback
     else //value does not change
       stateFrames( ); //value does not change, no event will be sent, execute callback by hand
-  }
-
-  //"Help About" was chosen from menu
-  private void actionHelpAbout( )
-  {
-    JOptionPane.showMessageDialog( dialogParent,
-                                   "BlinkenLightsInteractiveMovieProgram\n" +
-                                   "version 1.3.8 date 2009-11-21\n" +
-                                   "Copyright (C) 2004-2009: Stefan Schuermans <stefan@schuermans.info>\n" +
-                                   "Copyleft: GNU public license - http://www.gnu.org/copyleft/gpl.html\n" +
-                                   "a blinkenarea.org project",
-                                   "Blimp - About...",
-                                   JOptionPane.INFORMATION_MESSAGE );
   }
 
   //update frames controls (and go to certaint frame)
